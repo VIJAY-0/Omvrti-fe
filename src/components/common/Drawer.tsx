@@ -42,7 +42,7 @@ export const Drawer = ({ isOpen, onClose, type, userName = "Sam Watson" }: Drawe
         { icon: Phone, label: "Contact us" }
     ],
     SETTINGS: [
-        { icon: Bell, label: "Notifications" }
+        { icon: Bell, label: "Notifications", path: ROUTES.ALERTS }
     ]
   };
 
@@ -50,7 +50,7 @@ export const Drawer = ({ isOpen, onClose, type, userName = "Sam Watson" }: Drawe
     { icon: User, label: "My Profile" },
     { icon: Gift, label: "OmVrti.ai Rewards" },
     { icon: Settings, label: "My Preferences" },
-    { icon: Bell, label: "Notifications" },
+    { icon: Bell, label: "Notifications", path: ROUTES.ALERTS },
     { icon: Shield, label: "App", path: ROUTES.INTEGRATION.HOME },
     { icon: Settings, label: "Linked Accounts", path: ROUTES.INTEGRATION.HOME },
     { icon: CreditCard, label: "Payment Methods" },

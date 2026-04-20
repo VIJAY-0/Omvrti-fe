@@ -22,6 +22,19 @@ export const ROUTES = {
     DETAILS: (id: string) => `/trips/${id}`,
     CONFIRMED: '/trips/confirmed',
   },
+  AUTOPILOT: {
+    ALERT: (id: string) => `/trips/autopilot/alert/${id}`,
+    FLIGHT: (id: string) => `/trips/autopilot/booking/flight/${id}`,
+    HOTEL: (id: string) => `/trips/autopilot/booking/hotel/${id}`,
+    CAR: (id: string) => `/trips/autopilot/booking/car/${id}`,
+    SUMMARY: (id: string) => `/trips/autopilot/summary/${id}`,
+  },
+  COPILOT: {
+    FLIGHT: (id: string) => `/trips/copilot/booking/flight/${id}`,
+    HOTEL: (id: string) => `/trips/copilot/booking/hotel/${id}`,
+    CAR: (id: string) => `/trips/copilot/booking/car/${id}`,
+  },
+  ALERTS: '/alerts',
   INTEGRATION: {
     HOME: '/integration',
     LOGIN: '/integration/login',

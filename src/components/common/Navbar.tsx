@@ -10,14 +10,16 @@ export const Navbar = () => {
   const navItems = [
     { icon: HomeIcon, label: 'Home', path: ROUTES.TRIPS.HOME },
     { icon: Compass, label: 'Explore', path: '/explore' },
-    { icon: Bell, label: 'Alerts', path: '/alerts' },
+    { icon: Bell, label: 'Alerts', path: ROUTES.ALERTS },
     { icon: Settings, label: 'Settings', path: '/settings' },
   ];
 
   return (
     <div className="fixed bottom-0 left-0 right-0 h-[72px] bg-white border-t border-[#E0E0E0] flex justify-between items-center z-50 px-6">
       {navItems.map((item, index) => {
-        const isActive = location.pathname === item.path || (item.path === ROUTES.TRIPS.HOME && location.pathname === ROUTES.TRIPS.PLANNING);
+        const isActive = location.pathname === item.path || 
+                        (item.path === ROUTES.TRIPS.HOME && location.pathname === ROUTES.TRIPS.PLANNING) ||
+                        (item.path === ROUTES.ALERTS && location.pathname.startsWith('/trips/autopilot/'));
         return (
           <motion.button
             key={index}

@@ -14,6 +14,15 @@ import IntegrationHome from './pages/integration/index';
 import GoogleLogin from './pages/integration/login';
 import IntegrationSuccess from './pages/integration/success';
 import IntegrationSettings from './pages/integration/settings';
+import Alerts from './pages/alerts/index';
+import AutoPilotAlert from './pages/trips/autopilot_flow/Alert';
+import AutoPilotFlight from './pages/trips/autopilot_flow/Flight';
+import AutoPilotHotel from './pages/trips/autopilot_flow/Hotel';
+import AutoPilotCar from './pages/trips/autopilot_flow/Car';
+import AutoPilotSummary from './pages/trips/autopilot_flow/Summary';
+import CoPilotFlightSelection from './pages/trips/copilot_flow/FlightSelection';
+import CoPilotHotelSelection from './pages/trips/copilot_flow/HotelSelection';
+import CoPilotCarSelection from './pages/trips/copilot_flow/CarSelection';
 import { ROUTES } from './constants';
 
 export default function App() {
@@ -30,6 +39,21 @@ export default function App() {
             <Route path={ROUTES.TRIPS.AUTOPILOT} element={<TripAutopilot />} />
             <Route path={ROUTES.TRIPS.DETAILS(':id')} element={<TripDetails />} />
             <Route path={ROUTES.TRIPS.CONFIRMED} element={<TripConfirmed />} />
+
+            {/* AutoPilot Flow */}
+            <Route path={ROUTES.AUTOPILOT.ALERT(':id')} element={<AutoPilotAlert />} />
+            <Route path={ROUTES.AUTOPILOT.FLIGHT(':id')} element={<AutoPilotFlight />} />
+            <Route path={ROUTES.AUTOPILOT.HOTEL(':id')} element={<AutoPilotHotel />} />
+            <Route path={ROUTES.AUTOPILOT.CAR(':id')} element={<AutoPilotCar />} />
+            <Route path={ROUTES.AUTOPILOT.SUMMARY(':id')} element={<AutoPilotSummary />} />
+
+            {/* Co-Pilot Flow */}
+            <Route path={ROUTES.COPILOT.FLIGHT(':id')} element={<CoPilotFlightSelection />} />
+            <Route path={ROUTES.COPILOT.HOTEL(':id')} element={<CoPilotHotelSelection />} />
+            <Route path={ROUTES.COPILOT.CAR(':id')} element={<CoPilotCarSelection />} />
+
+            {/* Notifications */}
+            <Route path={ROUTES.ALERTS} element={<Alerts />} />
 
             {/* Integration Routes */}
             <Route path="/integration" element={<IntegrationHome />} />
