@@ -40,5 +40,6 @@ export const ROUTES = {
     LOGIN: '/integration/login',
     SUCCESS: '/integration/success',
     SETTINGS: '/integration/settings',
+    CALENDAR: '/integration/calendar',
   },
 };

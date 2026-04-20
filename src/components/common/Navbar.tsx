@@ -1,4 +1,4 @@
-import { Home as HomeIcon, Compass, Bell, Settings } from 'lucide-react';
+import { Home as HomeIcon, Compass, Bell, Settings, Calendar as CalendarIcon } from 'lucide-react';
 import { motion } from 'motion/react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { ROUTES } from '../../constants';
@@ -12,14 +12,16 @@ export const Navbar = () => {
     { icon: Compass, label: 'Explore', path: '/explore' },
     { icon: Bell, label: 'Alerts', path: ROUTES.ALERTS },
     { icon: Settings, label: 'Settings', path: '/settings' },
+    { icon: CalendarIcon, label: 'Calendar', path: ROUTES.INTEGRATION.CALENDAR, hidden: true },
   ];
 
   return (
     <div className="fixed bottom-0 left-0 right-0 h-[72px] bg-white border-t border-[#E0E0E0] flex justify-between items-center z-50 px-6">
-      {navItems.map((item, index) => {
+      {navItems.filter(item => !item.hidden).map((item, index) => {
         const isActive = location.pathname === item.path || 
                         (item.path === ROUTES.TRIPS.HOME && location.pathname === ROUTES.TRIPS.PLANNING) ||
-                        (item.path === ROUTES.ALERTS && location.pathname.startsWith('/trips/autopilot/'));
+                        (item.path === ROUTES.ALERTS && location.pathname.startsWith('/trips/autopilot/')) ||
+                        (item.label === 'Home' && location.pathname === ROUTES.INTEGRATION.CALENDAR);
         return (
           <motion.button
             key={index}

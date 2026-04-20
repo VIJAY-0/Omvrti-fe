@@ -62,9 +62,12 @@ export default function AutoPilotAlert() {
                 </div>
 
                 <div className="flex items-start gap-4 pb-4 border-b border-gray-50 text-left">
-                    <div className="p-2 bg-accent/5 rounded-xl text-accent">
+                    <button 
+                        onClick={() => navigate(ROUTES.INTEGRATION.CALENDAR)}
+                        className="p-2 bg-accent/5 rounded-xl text-accent hover:bg-accent/10 transition-colors"
+                    >
                         <Calendar size={20} />
-                    </div>
+                    </button>
                     <div className="flex flex-col">
                         <span className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Meeting Schedule</span>
                         <p className="text-xs font-bold text-gray-700 leading-relaxed">

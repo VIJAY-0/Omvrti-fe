@@ -15,6 +15,7 @@ import GoogleLogin from './pages/integration/login';
 import IntegrationSuccess from './pages/integration/success';
 import IntegrationSettings from './pages/integration/settings';
 import Alerts from './pages/alerts/index';
+import CalendarView from './pages/integration/calendar';
 import AutoPilotAlert from './pages/trips/autopilot_flow/Alert';
 import AutoPilotFlight from './pages/trips/autopilot_flow/Flight';
 import AutoPilotHotel from './pages/trips/autopilot_flow/Hotel';
@@ -60,6 +61,7 @@ export default function App() {
             <Route path="/integration/login" element={<GoogleLogin />} />
             <Route path="/integration/success" element={<IntegrationSuccess />} />
             <Route path="/integration/settings" element={<IntegrationSettings />} />
+            <Route path={ROUTES.INTEGRATION.CALENDAR} element={<CalendarView />} />
             
             {/* Fallback */}
             <Route path="*" element={<Home />} />
