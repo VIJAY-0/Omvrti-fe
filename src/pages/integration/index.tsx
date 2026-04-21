@@ -27,6 +27,7 @@ export default function IntegrationHome() {
     error, 
     refreshAll,
     toggleSync,
+    fullSync,
     makePrimary,
     api 
   } = useCalendarSync();
@@ -104,7 +105,7 @@ export default function IntegrationHome() {
     <DepthLayout
       title="Integrations"
       showBack
-      headerContent={<IntegrationHeader loading={loading} />}
+      headerContent={<IntegrationHeader loading={loading} onFullSync={fullSync} />}
     >
       <div className="flex flex-col gap-6 py-2">
         

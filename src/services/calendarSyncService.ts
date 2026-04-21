@@ -109,6 +109,64 @@ class CalendarSyncClient {
     }
   }
 
+  // ============ NEW: High-Efficiency Sync Endpoints ============
+
+  /**
+   * Fetches calendars from the provider (e.g. Google) and upserts into local DB.
+   * Sync status defaults to OFF for newly discovered calendars.
+   */
+  async discoverCalendars(provider: string): Promise<CalendarEntry[]> {
+    const response = await this.request<{ calendars: CalendarEntry[] }>(
+      'POST',
+      `/api/calendar/sync/${provider}/calendars`
+    );
+    return response.calendars;
+  }
+
+  /**
+   * Lists calendars directly from the local DB for a specific provider.
+   */
+  async listLocalCalendars(provider: string): Promise<CalendarEntry[]> {
+    const response = await this.request<{ calendars: CalendarEntry[] }>(
+      'GET',
+      `/api/calendar/sync/${provider}/calendars`
+    );
+    return response.calendars;
+  }
+
+  /**
+   * Toggles the synchronization state for a specific calendar.
+   * Turning sync ON triggers an immediate background event fetch from the provider.
+   */
+  async toggleCalendarSync(calendarId: string): Promise<{ enabled: boolean }> {
+    return this.request<{ enabled: boolean }>(
+      'PUT',
+      `/api/calendar/sync/calendars/${encodeURIComponent(calendarId)}/toggle`
+    );
+  }
+
+  /**
+   * Performs a full hydration: Discovers calendars AND fetches events for all active syncs.
+   */
+  async performFullHydration(provider: string): Promise<{ success: boolean }> {
+    return this.request<{ success: boolean }>(
+      'POST',
+      `/api/calendar/sync/${provider}/full`
+    );
+  }
+
+  /**
+   * Retrieves events for a specific calendar using "Smart Fetch" logic.
+   * Returns DB records if fresh, otherwise re-fetches from provider.
+   */
+  async getSmartEvents(calendarId: string): Promise<CalendarEvent[]> {
+    const response = await this.request<{ events: CalendarEvent[] }>(
+      'GET',
+      `/api/calendar/sync/calendars/${encodeURIComponent(calendarId)}/events`
+    );
+    return response.events;
+  }
+
   // ============ Auth Endpoints ============
 
   /**

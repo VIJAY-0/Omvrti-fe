@@ -21,18 +21,6 @@ export function useCalendarSync() {
   const [error, setError] = useState<string | null>(null);
 
   /**
-   * Toggles the sync state for a specific calendar.
-   */
-  const toggleSync = useCallback((calendarId: string) => {
-    setSyncedCalendarIds(prev => {
-      const isSynced = prev.includes(calendarId);
-      const next = isSynced ? prev.filter(id => id !== calendarId) : [...prev, calendarId];
-      console.log(`[useCalendarSync] TOGGLE SYNC FOR ${calendarId}: ${!isSynced ? 'ON' : 'OFF'}`);
-      return next;
-    });
-  }, []);
-
-  /**
    * Fetches all available calendar vendors supported by the platform.
    */
   const loadVendors = useCallback(async () => {
@@ -142,6 +130,54 @@ export function useCalendarSync() {
   }, [loadVendors, loadConnections, loadCalendarsForProvider, loadEventsForCalendar]);
 
   /**
+   * Toggles the sync state for a specific calendar.
+   * Now calls the backend endpoint to persist the toggle.
+   */
+  const toggleSync = useCallback(async (calendarId: string) => {
+    try {
+      console.log(`[useCalendarSync] PERSISTING SYNC TOGGLE FOR ${calendarId}`);
+      const result = await calendarSyncApi.toggleCalendarSync(calendarId);
+      
+      setSyncedCalendarIds(prev => {
+        const isSynced = prev.includes(calendarId);
+        const next = isSynced ? prev.filter(id => id !== calendarId) : [...prev, calendarId];
+        return next;
+      });
+
+      // If we just enabled sync, trigger a refresh to fetch the new events
+      if (result.enabled) {
+        await refreshAll(calendarId);
+      }
+    } catch (err: any) {
+      console.error('[useCalendarSync] FAILED TO TOGGLE SYNC:', err);
+      setError(err.message);
+    }
+  }, [refreshAll]);
+
+  /**
+   * Performs a full hydration sync across all providers.
+   */
+  const fullSync = useCallback(async () => {
+    try {
+      setLoading(true);
+      console.log('[useCalendarSync] INITIATING FULL HYDRATION SYNC');
+      
+      const conns = await loadConnections();
+      const allProviders = Array.from(new Set(conns.filter(c => c.isConnected).map(c => c.vendorName)));
+      
+      await Promise.all(allProviders.map(p => calendarSyncApi.performFullHydration(p as string)));
+      
+      console.log('[useCalendarSync] FULL HYDRATION COMPLETE. REFRESHING LOCAL UI.');
+      await refreshAll();
+    } catch (err: any) {
+      console.error('[useCalendarSync] FULL SYNC FAILED:', err);
+      setError(err.message);
+    } finally {
+      setLoading(false);
+    }
+  }, [loadConnections, refreshAll]);
+
+  /**
    * Management Actions
    */
   const makePrimary = useCallback(async (provider: string, calendarId: string) => {
@@ -183,6 +219,7 @@ export function useCalendarSync() {
     error,
     refreshAll,
     toggleSync,
+    fullSync,
     loadEventsForCalendar,
     makePrimary,
     createOmVrtiCalendar,
