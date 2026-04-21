@@ -1,6 +1,48 @@
 /**
  * Calendar Sync API Client
+ * This client provides methods to interact with the Calendar Sync backend service.
+ * It handles authentication, synchronization, and calendar event management.
  */
+
+export interface Vendor {
+  id: number;
+  name: string;
+  displayName: string;
+  vendorType: string;
+  isNewConnection: boolean;
+  authType: string;
+}
+
+export interface SyncConnection {
+  id: number;
+  vendorName: string;
+  syncEmail: string;
+  displayName: string;
+  isConnected: boolean;
+  isTokenExpired: boolean;
+  lastSyncDate: string;
+  accessTokenExpiryDate: string;
+}
+
+export interface CalendarEntry {
+  id: string;
+  summary: string;
+  timeZone: string;
+  provider: string; // Unified provider field for UI
+}
+
+export interface CalendarEvent {
+  id: string;
+  summary: string;
+  description?: string;
+  location?: string;
+  startDateTime?: string;
+  endDateTime?: string;
+  startDate?: string;
+  endDate?: string;
+  provider: string; // Unified provider field for UI
+  calendarId: string; // Source calendar ID
+}
 
 class CalendarSyncClient {
   private baseUrl: string;
@@ -9,6 +51,9 @@ class CalendarSyncClient {
     this.baseUrl = baseUrl;
   }
 
+  /**
+   * Universal request handler with centralized logging and error management.
+   */
   private async request<T>(
     method: string,
     endpoint: string,
@@ -66,11 +111,17 @@ class CalendarSyncClient {
 
   // ============ Auth Endpoints ============
 
+  /**
+   * Generates a provider-specific OAuth URL to initiate authentication.
+   */
   async getAuthUrl(provider: string): Promise<string> {
     const response = await this.request<{ url: string }>('GET', `/api/auth/${provider}/url`);
     return response.url;
   }
 
+  /**
+   * Checks if the user is currently authenticated with a specific provider.
+   */
   async checkAuthStatus(provider: string): Promise<boolean> {
     const response = await this.request<{ authenticated: boolean }>(
       'GET',
@@ -79,6 +130,9 @@ class CalendarSyncClient {
     return response.authenticated;
   }
 
+  /**
+   * Logs out from a specific calendar provider.
+   */
   async logout(provider: string): Promise<boolean> {
     const response = await this.request<{ success: boolean }>(
       'POST',
@@ -89,47 +143,78 @@ class CalendarSyncClient {
 
   // ============ Sync Endpoints ============
 
-  async getSyncConnections(): Promise<any[]> {
-    return this.request<any[]>('GET', '/api/sync/connections');
+  /**
+   * Fetches the list of all available calendar vendors (Google, Outlook, etc.)
+   */
+  async getVendors(): Promise<Vendor[]> {
+    return this.request<Vendor[]>('GET', '/api/sync/vendors');
   }
 
-  async getSyncConnection(id: number): Promise<any> {
-    return this.request<any>('GET', `/api/sync/connections/${id}`);
+  /**
+   * Fetches all active sync connections established by the user.
+   */
+  async getSyncConnections(): Promise<SyncConnection[]> {
+    return this.request<SyncConnection[]>('GET', '/api/sync/connections');
   }
 
+  /**
+   * Fetches detailed information for a specific sync connection.
+   */
+  async getSyncConnection(id: number): Promise<SyncConnection> {
+    return this.request<SyncConnection>('GET', `/api/sync/connections/${id}`);
+  }
+
+  /**
+   * Manually triggers a synchronization cycle for a specific connection.
+   */
   async triggerSync(syncId: number, provider: string): Promise<string> {
     return this.request<string>('POST', `/api/sync/sync/${syncId}?provider=${provider}`);
   }
 
+  /**
+   * Polls the synchronization status of a specific connection.
+   */
   async getSyncStatus(id: number): Promise<string> {
     return this.request<string>('GET', `/api/sync/status/${id}`);
   }
 
+  /**
+   * Permenantly removes a sync connection.
+   */
   async disconnectVendor(id: number): Promise<string> {
     return this.request<string>('DELETE', `/api/sync/connections/${id}`);
   }
 
   // ============ Calendar Endpoints ============
 
-  async listCalendars(provider: string): Promise<any[]> {
-    const response = await this.request<{ calendars: any[] }>(
+  /**
+   * Lists all calendars available under a specific provider account.
+   */
+  async listCalendars(provider: string): Promise<CalendarEntry[]> {
+    const response = await this.request<{ calendars: CalendarEntry[] }>(
       'GET',
       `/api/calendar/${provider}/list`
     );
     return response.calendars;
   }
 
+  /**
+   * Retrieves events from a specific calendar.
+   */
   async getEvents(
     provider: string,
     calendarId: string = 'primary'
-  ): Promise<any[]> {
-    const response = await this.request<{ events: any[] }>(
+  ): Promise<CalendarEvent[]> {
+    const response = await this.request<{ events: CalendarEvent[] }>(
       'GET',
       `/api/calendar/${provider}/events?calendarId=${calendarId}`
     );
     return response.events;
   }
 
+  /**
+   * Creates a new event in the target calendar.
+   */
   async createEvent(
     provider: string,
     event: {
@@ -144,6 +229,9 @@ class CalendarSyncClient {
     return this.request('POST', `/api/calendar/${provider}/events?calendarId=${calendarId}`, event);
   }
 
+  /**
+   * Quickly creates an event using natural language processing (provider dependent).
+   */
   async quickAddEvent(
     provider: string,
     text: string,
@@ -156,6 +244,9 @@ class CalendarSyncClient {
     );
   }
 
+  /**
+   * Deletes an event by its ID.
+   */
   async deleteEvent(
     provider: string,
     eventId: string,
@@ -170,6 +261,9 @@ class CalendarSyncClient {
 
   // ============ Webhook Endpoints ============
 
+  /**
+   * Registers a webhook to receive real-time updates from the calendar provider.
+   */
   async registerWebhook(
     cuSyncCalendarId: number,
     provider: string
@@ -180,6 +274,9 @@ class CalendarSyncClient {
     );
   }
 
+  /**
+   * Unregisters a previously active webhook.
+   */
   async unregisterWebhook(webhookId: string): Promise<string> {
     return this.request('DELETE', `/api/webhooks/calendar/${webhookId}`);
   }
