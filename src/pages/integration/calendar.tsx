@@ -287,13 +287,13 @@ export default function CalendarView() {
         whileHover={{ scale: 1.1 }}
         whileTap={{ scale: 0.9 }}
         onClick={refreshAll}
-        className="fixed bottom-10 right-8 w-14 h-14 bg-primary text-white rounded-full shadow-2xl flex items-center justify-center z-50 border border-white/20 active:bg-orange-600"
+        className="fixed bottom-24 right-8 w-14 h-14 bg-primary text-white rounded-full shadow-2xl flex items-center justify-center z-40 border border-white/20 active:bg-orange-600"
       >
         <RefreshCw size={24} className={loading ? 'animate-spin' : ''} />
       </motion.button>
 
       {/* Zoom Hint (Visual feedback for gesture) */}
-      <div className="fixed bottom-10 left-8 p-3 bg-black/50 backdrop-blur-md rounded-full text-white/40 flex items-center gap-2 border border-white/5 pointer-events-none">
+      <div className="fixed bottom-24 left-8 p-3 bg-black/50 backdrop-blur-md rounded-full text-white/40 flex items-center gap-2 border border-white/5 pointer-events-none z-40">
         <ZoomIn size={14} />
         <span className="text-[8px] font-black uppercase tracking-widest">Pinch to Zoom</span>
       </div>
