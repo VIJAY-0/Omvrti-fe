@@ -6,12 +6,15 @@ import { SyncConnection } from '../../services/calendarSyncService';
 interface ConnectionItemProps {
   connection: SyncConnection;
   onDisconnect: (id: number) => void;
+  onViewCalendar: () => void;
 }
 
 /**
  * Displays an active synchronization connection with status details.
+ * Clicking the item navigates to the calendar view.
+ * Includes a distinct remove button for disconnection.
  */
-export const ConnectionItem: React.FC<ConnectionItemProps> = ({ connection, onDisconnect }) => {
+export const ConnectionItem: React.FC<ConnectionItemProps> = ({ connection, onDisconnect, onViewCalendar }) => {
   const getIcon = (name: string) => {
     const lowerName = name.toLowerCase();
     if (lowerName === 'google') return <Calendar className="text-orange-500" size={20} />;
@@ -24,7 +27,8 @@ export const ConnectionItem: React.FC<ConnectionItemProps> = ({ connection, onDi
     <motion.div
       initial={{ opacity: 0, x: -20 }}
       animate={{ opacity: 1, x: 0 }}
-      className="p-4 rounded-2xl bg-gray-50 border border-gray-100 group"
+      onClick={onViewCalendar}
+      className="p-4 rounded-2xl bg-gray-50 border border-gray-100 group transition-all hover:bg-white hover:shadow-md cursor-pointer"
     >
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-3">
@@ -32,7 +36,7 @@ export const ConnectionItem: React.FC<ConnectionItemProps> = ({ connection, onDi
             {getIcon(connection.vendorName)}
           </div>
           <div className="flex flex-col">
-            <span className="text-sm font-black text-gray-900">{connection.syncEmail}</span>
+            <span className="text-sm font-black text-gray-900 leading-tight">{connection.syncEmail}</span>
             <div className="flex items-center gap-2">
               <div className={`flex items-center gap-1 text-[9px] font-black uppercase tracking-tighter ${
                 connection.isTokenExpired ? 'text-red-500' : 'text-green-600'
@@ -44,7 +48,7 @@ export const ConnectionItem: React.FC<ConnectionItemProps> = ({ connection, onDi
                 )}
               </div>
               <span className="text-[9px] text-gray-400 font-bold">•</span>
-              <span className="text-[9px] text-gray-400 font-bold uppercase">
+              <span className="text-[9px] text-gray-400 font-bold uppercase truncate max-w-[80px]">
                 {connection.vendorName}
               </span>
             </div>
@@ -52,11 +56,15 @@ export const ConnectionItem: React.FC<ConnectionItemProps> = ({ connection, onDi
         </div>
         
         <button
-          onClick={() => onDisconnect(connection.id)}
-          className="p-2 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-xl transition-all opacity-0 group-hover:opacity-100"
+          onClick={(e) => {
+            e.stopPropagation();
+            onDisconnect(connection.id);
+          }}
+          className="flex items-center gap-1.5 px-3 py-1.5 bg-white border border-gray-100 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-xl transition-all shadow-sm"
           title="Disconnect Account"
         >
-          <Unlink size={18} />
+          <span className="text-[10px] font-black uppercase tracking-widest hidden group-hover:inline">Remove</span>
+          <Unlink size={14} />
         </button>
       </div>
     </motion.div>

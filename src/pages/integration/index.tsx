@@ -1,6 +1,8 @@
 import { useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { DepthLayout } from '../../components/common/DepthLayout';
 import { useCalendarSync } from '../../hooks/useCalendarSync';
+import { ROUTES } from '../../constants';
 
 // Sub-components for better hierarchy and readability
 import { IntegrationHeader } from '../../components/integration/IntegrationHeader';
@@ -12,14 +14,9 @@ import { VendorItem } from '../../components/integration/VendorItem';
  * IntegrationHome Page Component
  * 
  * This component serves as the central hub for managing third-party calendar integrations.
- * It provides a modular interface to:
- * 1. View all available calendar vendors (Google, Outlook, etc.)
- * 2. Manage active synchronization connections.
- * 3. Troubleshoot connectivity issues with the high-depth diagnostic panel.
- * 
- * Refactored into a modular architecture for improved maintainability.
  */
 export default function IntegrationHome() {
+  const navigate = useNavigate();
   // Leverage the centralized useCalendarSync hook for all data and API operations
   const { 
     vendors, 
@@ -36,7 +33,6 @@ export default function IntegrationHome() {
    */
   useEffect(() => {
     const handleAuthMessage = (event: MessageEvent) => {
-      // Security Check: You should ideally verify event.origin here if known
       console.log('[IntegrationHome] RECEIVED CROSS-WINDOW MESSAGE:', event);
       if (event.data.type === 'OAUTH_AUTH_SUCCESS') {
         console.log('[IntegrationHome] OAUTH SUCCESS. REFRESHING SYNC DATA...');
@@ -90,7 +86,6 @@ export default function IntegrationHome() {
     
     if (confirmed) {
       try {
-        setLoadingStateManually(true); // Internal hook loading state doesn't track manual deletes as cleanly
         await api.disconnectVendor(connectionId);
         console.log(`[IntegrationHome] CONNECTION ${connectionId} SUCCESSFULLY TERMINATED.`);
         await refreshAll();
@@ -101,12 +96,6 @@ export default function IntegrationHome() {
     }
   };
 
-  // Helper to force loading state if needed during manual operations
-  // Note: ideally the hook should expose a setLoading method
-  const setLoadingStateManually = (val: boolean) => {
-    // This is just a conceptual placeholder since the hook handles its own loading usually
-  };
-
   return (
     <DepthLayout
       title="Integrations"
@@ -115,9 +104,7 @@ export default function IntegrationHome() {
     >
       <div className="flex flex-col gap-6 py-2">
         
-        {/* RENDER PHASE: Diagnostic Panel
-            Only appears if there is a persistent error communicating with the backend.
-        */}
+        {/* RENDER PHASE: Diagnostic Panel */}
         {error && (
           <DiagnosticPanel 
             error={error} 
@@ -126,9 +113,7 @@ export default function IntegrationHome() {
           />
         )}
 
-        {/* RENDER PHASE: Active Account Management
-            Displays connected identities. Hidden if no connections exist.
-        */}
+        {/* RENDER PHASE: Active Account Management */}
         {connections.length > 0 && (
           <div className="bg-white rounded-[32px] p-6 shadow-xl border border-gray-100 overflow-hidden">
             <div className="flex flex-col gap-5">
@@ -142,7 +127,8 @@ export default function IntegrationHome() {
                   <ConnectionItem 
                     key={conn.id} 
                     connection={conn} 
-                    onDisconnect={handleDisconnect} 
+                    onDisconnect={handleDisconnect}
+                    onViewCalendar={() => navigate(ROUTES.INTEGRATION.CALENDAR)}
                   />
                 ))}
               </div>
@@ -150,9 +136,7 @@ export default function IntegrationHome() {
           </div>
         )}
 
-        {/* RENDER PHASE: Provider Marketplace
-            Lists all available vendors dynamically fetched from the API.
-        */}
+        {/* RENDER PHASE: Provider Marketplace */}
         <div className="bg-white rounded-[32px] p-6 shadow-xl border border-gray-100 mb-12">
           <div className="flex flex-col gap-6">
             <div className="flex flex-col text-left border-b border-gray-50 pb-4">
