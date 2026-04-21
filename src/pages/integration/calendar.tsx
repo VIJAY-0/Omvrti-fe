@@ -49,7 +49,7 @@ type ViewType = 'day' | 'month' | 'year';
  * Implements a zoomed-out navigation model for productivity.
  */
 export default function CalendarView() {
-  const { calendars, events: apiEvents, loading, refreshAll } = useCalendarSync();
+  const { calendars, events: apiEvents, loading, error, refreshAll, api } = useCalendarSync();
   const [viewType, setViewType] = useState<ViewType>('day');
   const [selectedCalendarIds, setSelectedCalendarIds] = useState<string[]>(['sys-cal-1']);
   const [currentDate, setCurrentDate] = useState(new Date());
