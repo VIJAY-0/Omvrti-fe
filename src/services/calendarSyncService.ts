@@ -245,6 +245,30 @@ class CalendarSyncClient {
   }
 
   /**
+   * Sets a specific calendar as the primary calendar for the provider account.
+   */
+  async setPrimaryCalendar(provider: string, calendarId: string): Promise<boolean> {
+    return this.request<boolean>(
+      'POST',
+      `/api/calendar/${provider}/primary?calendarId=${encodeURIComponent(calendarId)}`
+    );
+  }
+
+  /**
+   * Creates a specialized "OmVrti.ai" system calendar in the provider's ecosystem.
+   */
+  async createOmVrtiCalendar(provider: string): Promise<CalendarEntry> {
+    return this.request<CalendarEntry>(
+      'POST',
+      `/api/calendar/${provider}/create`,
+      { 
+        summary: 'OmVrti.ai',
+        description: 'Auto-pilot travel itineraries and logistics' 
+      }
+    );
+  }
+
+  /**
    * Deletes an event by its ID.
    */
   async deleteEvent(

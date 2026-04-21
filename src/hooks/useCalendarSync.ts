@@ -92,8 +92,8 @@ export function useCalendarSync() {
   /**
    * Orchestrates a full refresh of all calendar-related data.
    */
-  const refreshAll = useCallback(async () => {
-    console.log('[useCalendarSync] REFRESHING ALL CALENDAR DATA...');
+  const refreshAll = useCallback(async (targetCalendarId?: string) => {
+    console.log('[useCalendarSync] REFRESHING CALENDAR DATA...', targetCalendarId ? `(Target: ${targetCalendarId})` : '(Full)');
     setLoading(true);
     
     // Parallel load of vendors and connections
@@ -110,22 +110,50 @@ export function useCalendarSync() {
       return;
     }
 
-    // Load state for all connected providers in parallel
-    console.log(`[useCalendarSync] LOADING CALENDARS FOR ${allProviders.length} PROVIDERS...`);
+    // Load calendars for all connected providers
     const calendarResults = await Promise.all(allProviders.map(p => loadCalendarsForProvider(p as string)));
     const flatCalendars = calendarResults.flat();
-    console.log('[useCalendarSync] TOTAL CALENDARS LOADED:', flatCalendars.length);
     setCalendars(flatCalendars);
 
-    // Default: Load events for primary calendars
-    console.log(`[useCalendarSync] LOADING EVENTS FOR PRIMARY CALENDARS...`);
-    const eventResults = await Promise.all(allProviders.map(p => loadEventsForCalendar(p as string, 'primary')));
+    // Dynamic Event Loading: If a target ID is provided, we only sync that. Otherwise, we sync primaries.
+    const eventResults = await Promise.all(allProviders.map(p => {
+      // If targetCalendarId is provided, we use it. Otherwise, default to 'primary'.
+      // Note: In a multi-provider setup, we might need more complex logic to map ID to provider.
+      return loadEventsForCalendar(p as string, targetCalendarId || 'primary');
+    }));
+    
     const flatEvents = eventResults.flat();
-    console.log('[useCalendarSync] TOTAL EVENTS LOADED:', flatEvents.length);
     setEvents(flatEvents);
     
     setLoading(false);
   }, [loadVendors, loadConnections, loadCalendarsForProvider, loadEventsForCalendar]);
+
+  /**
+   * Management Actions
+   */
+  const makePrimary = useCallback(async (provider: string, calendarId: string) => {
+    try {
+      setLoading(true);
+      await calendarSyncApi.setPrimaryCalendar(provider, calendarId);
+      await refreshAll(calendarId);
+    } catch (err: any) {
+      setError(err.message);
+    } finally {
+      setLoading(false);
+    }
+  }, [refreshAll]);
+
+  const createOmVrtiCalendar = useCallback(async (provider: string) => {
+    try {
+      setLoading(true);
+      await calendarSyncApi.createOmVrtiCalendar(provider);
+      await refreshAll();
+    } catch (err: any) {
+      setError(err.message);
+    } finally {
+      setLoading(false);
+    }
+  }, [refreshAll]);
 
   // Initial data load on mount
   useEffect(() => {
@@ -141,6 +169,8 @@ export function useCalendarSync() {
     error,
     refreshAll,
     loadEventsForCalendar,
+    makePrimary,
+    createOmVrtiCalendar,
     api: calendarSyncApi
   };
 }

@@ -10,6 +10,7 @@ import { DayTimeline } from '../../components/calendar/DayTimeline';
 import { MonthHeatmap } from '../../components/calendar/MonthHeatmap';
 import { YearStrategic } from '../../components/calendar/YearStrategic';
 import { CalendarSelector } from '../../components/calendar/CalendarSelector';
+import { CalendarManagement } from '../../components/calendar/CalendarManagement';
 import { DiagnosticPanel } from '../../components/integration/DiagnosticPanel';
 
 // Static configuration for branding
@@ -49,7 +50,17 @@ type ViewType = 'day' | 'month' | 'year';
  * Implements a zoomed-out navigation model for productivity.
  */
 export default function CalendarView() {
-  const { calendars, events: apiEvents, loading, error, refreshAll, api } = useCalendarSync();
+  const { 
+    calendars, 
+    events: apiEvents, 
+    loading, 
+    error, 
+    refreshAll, 
+    makePrimary, 
+    createOmVrtiCalendar, 
+    connections,
+    api 
+  } = useCalendarSync();
   const [viewType, setViewType] = useState<ViewType>('day');
   const [selectedCalendarIds, setSelectedCalendarIds] = useState<string[]>(['sys-cal-1']);
   const [currentDate, setCurrentDate] = useState(new Date());
@@ -102,7 +113,32 @@ export default function CalendarView() {
     }
   };
 
-  // Pinch-to-zoom Gesture Handler
+  /**
+   * INTERACTION: Toggles calendar visibility and triggers targeted sync.
+   */
+  const handleToggleCalendar = (id: string) => {
+    console.log(`[CalendarView] TOGGLE/SYNC TARGET: ${id}`);
+    
+    const isNowSelected = !selectedCalendarIds.includes(id);
+    
+    setSelectedCalendarIds(prev => 
+      prev.includes(id) ? prev.filter(c => c !== id) : [...prev, id]
+    );
+
+    if (isNowSelected) {
+      console.log(`[CalendarView] EXECUTING TARGETED RE-SYNC FOR: ${id}`);
+      refreshAll(id);
+    }
+  };
+
+  /**
+   * MANAGEMENT: Bridge for Administrative Actions
+   */
+  const handleInitOmVrti = async () => {
+    const activeProvider = connections.find(c => c.isConnected)?.vendorName || 'google';
+    console.log(`[CalendarView] INITIALIZING OMVRTII ON: ${activeProvider}`);
+    await createOmVrtiCalendar(activeProvider);
+  };
   const targetRef = useRef(null);
   usePinch(
     ({ offset: [d], last }) => {
@@ -153,7 +189,7 @@ export default function CalendarView() {
           <CalendarSelector 
             calendars={allCalendars} 
             selectedIds={selectedCalendarIds} 
-            onToggle={(id) => setSelectedCalendarIds(prev => prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id])} 
+            onToggle={handleToggleCalendar} 
           />
         </div>
       }
@@ -162,6 +198,22 @@ export default function CalendarView() {
         ref={targetRef} 
         className="touch-none flex flex-col gap-6 mb-24 py-2"
       >
+        {/* Hierarchy Level 0: Fleet Management 
+            Visible primarily in 'Year' view or as a drawer (Simplified here as header-proximal section)
+        */}
+        {viewType === 'year' && (
+          <motion.div
+            initial={{ opacity: 0, y: -20 }}
+            animate={{ opacity: 1, y: 0 }}
+          >
+            <CalendarManagement 
+              calendars={allCalendars} 
+              onSetPrimary={makePrimary} 
+              onCreateOmVrti={handleInitOmVrti} 
+            />
+          </motion.div>
+        )}
+
         {/* Error Handling with Diagnostic Panel */}
         {error && (
           <DiagnosticPanel 
