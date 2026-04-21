@@ -25,23 +25,30 @@ export interface SyncConnection {
 }
 
 export interface CalendarEntry {
-  id: string;
-  summary: string;
+  id: number; // DB ID (cuSyncCalendarId)
+  syncCalendarId: string; // Provider specific ID
+  displayName: string;
+  color?: string;
   timeZone: string;
-  provider: string; // Unified provider field for UI
+  isPrimary: boolean;
+  isWritable: boolean;
+  isSyncOn: boolean;
+  provider?: string; // Appended by client for UI routing
 }
 
 export interface CalendarEvent {
-  id: string;
-  summary: string;
+  id: number;
+  syncEventId: string;
+  title: string;
   description?: string;
   location?: string;
-  startDateTime?: string;
-  endDateTime?: string;
-  startDate?: string;
-  endDate?: string;
-  provider: string; // Unified provider field for UI
-  calendarId: string; // Source calendar ID
+  eventStartDate: string;
+  eventEndDate: string;
+  eventTimeZone: string;
+  isAllDayEvent: boolean;
+  lastSyncDate: string;
+  provider?: string; // Appended by client for UI routing
+  calendarId?: number; // DB ID of the source calendar
 }
 
 class CalendarSyncClient {
@@ -109,62 +116,65 @@ class CalendarSyncClient {
     }
   }
 
-  // ============ NEW: High-Efficiency Sync Endpoints ============
+  // ============ NEW: High-Efficiency Sync Endpoints (Strict API Reference) ============
 
   /**
-   * Fetches calendars from the provider (e.g. Google) and upserts into local DB.
-   * Sync status defaults to OFF for newly discovered calendars.
+   * 1. POST /api/calendar/sync/{provider}/calendars
+   * Pulls calendars from Google/Microsoft, upserts into DB.
    */
   async discoverCalendars(provider: string): Promise<CalendarEntry[]> {
-    const response = await this.request<{ calendars: CalendarEntry[] }>(
+    const data = await this.request<CalendarEntry[]>(
       'POST',
       `/api/calendar/sync/${provider}/calendars`
     );
-    return response.calendars;
+    return data.map(cal => ({ ...cal, provider }));
   }
 
   /**
-   * Lists calendars directly from the local DB for a specific provider.
+   * 2. GET /api/calendar/sync/{provider}/calendars
+   * Returns stored calendars from DB. No provider call.
    */
   async listLocalCalendars(provider: string): Promise<CalendarEntry[]> {
-    const response = await this.request<{ calendars: CalendarEntry[] }>(
+    const data = await this.request<CalendarEntry[]>(
       'GET',
       `/api/calendar/sync/${provider}/calendars`
     );
-    return response.calendars;
+    return data.map(cal => ({ ...cal, provider }));
   }
 
   /**
-   * Toggles the synchronization state for a specific calendar.
-   * Turning sync ON triggers an immediate background event fetch from the provider.
+   * 3. PUT /api/calendar/sync/calendars/{cuSyncCalendarId}/toggle
+   * Toggle sync on/off. Body: { "syncOn": true }
    */
-  async toggleCalendarSync(calendarId: string): Promise<{ enabled: boolean }> {
-    return this.request<{ enabled: boolean }>(
+  async toggleCalendarSync(cuSyncCalendarId: number, syncOn: boolean): Promise<CalendarEntry> {
+    return this.request<CalendarEntry>(
       'PUT',
-      `/api/calendar/sync/calendars/${encodeURIComponent(calendarId)}/toggle`
+      `/api/calendar/sync/calendars/${cuSyncCalendarId}/toggle`,
+      { syncOn }
     );
   }
 
   /**
-   * Performs a full hydration: Discovers calendars AND fetches events for all active syncs.
+   * 4. POST /api/calendar/sync/{provider}/full
+   * Re-fetches all calendars + events for every isSyncOn: true calendar.
    */
-  async performFullHydration(provider: string): Promise<{ success: boolean }> {
-    return this.request<{ success: boolean }>(
+  async performFullHydration(provider: string): Promise<{ status: string; message: string }> {
+    return this.request<{ status: string; message: string }>(
       'POST',
       `/api/calendar/sync/${provider}/full`
     );
   }
 
   /**
-   * Retrieves events for a specific calendar using "Smart Fetch" logic.
-   * Returns DB records if fresh, otherwise re-fetches from provider.
+   * 5. GET /api/calendar/sync/calendars/{cuSyncCalendarId}/events
+   * Returns events from DB. Smart fetch logic on server.
    */
-  async getSmartEvents(calendarId: string): Promise<CalendarEvent[]> {
-    const response = await this.request<{ events: CalendarEvent[] }>(
+  async getSmartEvents(cuSyncCalendarId: number, provider?: string): Promise<CalendarEvent[]> {
+    const data = await this.request<CalendarEvent[]>(
       'GET',
-      `/api/calendar/sync/calendars/${encodeURIComponent(calendarId)}/events`
+      `/api/calendar/sync/calendars/${cuSyncCalendarId}/events`
     );
-    return response.events;
+    return data.map(evt => ({ ...evt, provider, calendarId: cuSyncCalendarId }));
   }
 
   // ============ Auth Endpoints ============

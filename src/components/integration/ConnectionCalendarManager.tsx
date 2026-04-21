@@ -4,8 +4,8 @@ import { CalendarEntry } from '../../services/calendarSyncService';
 
 interface ConnectionCalendarManagerProps {
   calendars: CalendarEntry[];
-  syncedIds: string[];
-  onToggleSync: (id: string) => void;
+  syncedIds: number[];
+  onToggleSync: (id: number) => void;
   onMakePrimary: (provider: string, id: string) => void;
 }
 
@@ -40,9 +40,9 @@ export const ConnectionCalendarManager: React.FC<ConnectionCalendarManagerProps>
                 className="flex items-center justify-between p-3.5 bg-white border border-gray-100 rounded-2xl hover:border-primary/20 transition-all group shadow-sm"
               >
                 <div className="flex flex-col min-w-0 pr-2">
-                  <span className="text-xs font-black text-gray-900 truncate leading-tight uppercase tracking-tight">{cal.summary}</span>
+                  <span className="text-xs font-black text-gray-900 truncate leading-tight uppercase tracking-tight">{cal.displayName}</span>
                   <div className="flex items-center gap-1.5 mt-0.5">
-                    <span className="text-[8px] font-bold text-gray-400 uppercase tracking-tighter truncate max-w-[120px]">ID: {cal.id}</span>
+                    <span className="text-[8px] font-bold text-gray-400 uppercase tracking-tighter truncate max-w-[120px]">ID: {cal.syncCalendarId}</span>
                   </div>
                 </div>
                 
@@ -50,7 +50,7 @@ export const ConnectionCalendarManager: React.FC<ConnectionCalendarManagerProps>
                    <button 
                     onClick={(e) => {
                       e.stopPropagation();
-                      onMakePrimary(cal.provider, cal.id);
+                      onMakePrimary(cal.provider || '', cal.syncCalendarId);
                     }}
                     className="p-1.5 text-gray-300 hover:text-primary transition-colors active:scale-90"
                     title="Set as Account Primary"

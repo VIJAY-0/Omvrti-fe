@@ -112,7 +112,7 @@ export const DayTimeline: React.FC<DayTimelineProps> = ({ events, selectedDate }
                     </div>
                     {!isMini && (
                        <span className="text-[10px] font-bold text-white/40 uppercase tracking-widest mt-0.5">
-                        {evt.provider} System Feedback
+                        {evt.provider || 'Google'} System Feedback
                       </span>
                     )}
                   </div>

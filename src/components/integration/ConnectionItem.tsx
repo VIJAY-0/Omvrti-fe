@@ -7,10 +7,10 @@ import { ConnectionCalendarManager } from './ConnectionCalendarManager';
 interface ConnectionItemProps {
   connection: SyncConnection;
   calendars: CalendarEntry[];
-  syncedIds: string[];
+  syncedIds: number[];
   onDisconnect: (id: number) => void;
   onViewCalendar: () => void;
-  onToggleSync: (id: string) => void;
+  onToggleSync: (id: number) => void;
   onMakePrimary: (provider: string, id: string) => void;
 }
 
@@ -31,7 +31,7 @@ export const ConnectionItem: React.FC<ConnectionItemProps> = ({
 
   // Filter calendars belonging to this connection provider
   const connectionCalendars = calendars.filter(c => 
-    c.provider.toLowerCase() === connection.vendorName.toLowerCase()
+    c.provider?.toLowerCase() === connection.vendorName.toLowerCase()
   );
 
   const getIcon = (name: string) => {

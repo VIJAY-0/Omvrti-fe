@@ -62,27 +62,27 @@ export default function CalendarView() {
     api 
   } = useCalendarSync();
   const [viewType, setViewType] = useState<ViewType>('day');
-  const [selectedCalendarIds, setSelectedCalendarIds] = useState<string[]>(['sys-cal-1']);
+  const [selectedCalendarIds, setSelectedCalendarIds] = useState<(string | number)[]>(['sys-cal-1']);
   const [currentDate, setCurrentDate] = useState(new Date());
 
   // Data Normalization
   const allCalendars = useMemo(() => {
     const apiCals = calendars.map(cal => ({
       id: cal.id,
-      name: cal.summary,
-      color: PROVIDER_COLORS[cal.provider.toLowerCase()] || '#888888',
-      provider: cal.provider
+      name: cal.displayName,
+      color: PROVIDER_COLORS[cal.provider?.toLowerCase() || 'google'] || '#888888',
+      provider: cal.provider || 'google'
     }));
-    return [SYSTEM_CALENDAR, ...apiCals];
+    return [SYSTEM_CALENDAR, ...apiCals] as any[];
   }, [calendars]);
 
   const allEvents = useMemo(() => {
     const normalizedApiEvents = apiEvents.map(evt => ({
       id: evt.id,
-      calendarId: evt.calendarId || 'primary',
-      title: evt.summary,
-      start: evt.startDateTime || evt.startDate || '',
-      end: evt.endDateTime || evt.endDate || '',
+      calendarId: evt.calendarId || 0,
+      title: evt.title,
+      start: evt.eventStartDate || '',
+      end: evt.eventEndDate || '',
       location: evt.location,
       isTrip: false,
       provider: evt.provider
@@ -116,7 +116,7 @@ export default function CalendarView() {
   /**
    * INTERACTION: Toggles calendar visibility and triggers targeted sync.
    */
-  const handleToggleCalendar = (id: string) => {
+  const handleToggleCalendar = (id: string | number) => {
     console.log(`[CalendarView] TOGGLE/SYNC TARGET: ${id}`);
     
     const isNowSelected = !selectedCalendarIds.includes(id);
@@ -125,8 +125,8 @@ export default function CalendarView() {
       prev.includes(id) ? prev.filter(c => c !== id) : [...prev, id]
     );
 
-    if (isNowSelected) {
-      console.log(`[CalendarView] EXECUTING TARGETED RE-SYNC FOR: ${id}`);
+    if (isNowSelected && typeof id === 'number') {
+      console.log(`[CalendarView] EXECUTING TARGETED RE-SYNC FOR ID: ${id}`);
       refreshAll(id);
     }
   };

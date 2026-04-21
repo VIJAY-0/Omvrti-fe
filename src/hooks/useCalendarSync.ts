@@ -16,7 +16,7 @@ export function useCalendarSync() {
   const [connections, setConnections] = useState<SyncConnection[]>([]);
   const [calendars, setCalendars] = useState<CalendarEntry[]>([]);
   const [events, setEvents] = useState<CalendarEvent[]>([]);
-  const [syncedCalendarIds, setSyncedCalendarIds] = useState<string[]>([]);
+  const [syncedCalendarIds, setSyncedCalendarIds] = useState<number[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -27,12 +27,10 @@ export function useCalendarSync() {
     try {
       console.log('[useCalendarSync] FETCHING VENDORS...');
       const data = await calendarSyncApi.getVendors();
-      console.log('[useCalendarSync] VENDORS RECEIVED:', data);
       setVendors(data);
       return data;
     } catch (err: any) {
       console.error('[useCalendarSync] FAILED TO FETCH VENDORS:', err);
-      // We don't set global error for vendor load as it's secondary to primary connections
       return [];
     }
   }, []);
@@ -45,7 +43,6 @@ export function useCalendarSync() {
       console.log('[useCalendarSync] FETCHING CONNECTIONS...');
       setLoading(true);
       const data = await calendarSyncApi.getSyncConnections();
-      console.log('[useCalendarSync] CONNECTIONS RECEIVED:', data);
       setConnections(data);
       return data;
     } catch (err: any) {
@@ -58,34 +55,29 @@ export function useCalendarSync() {
   }, []);
 
   /**
-   * Fetches a list of calendars for a specific connection.
+   * Fetches the official calendar list from the provider and updates DB.
    */
-  const loadCalendarsForProvider = useCallback(async (provider: string) => {
+  const discoverCalendarsForProvider = useCallback(async (provider: string) => {
     try {
-      console.log(`[useCalendarSync] FETCHING CALENDARS FOR ${provider}...`);
-      const data = await calendarSyncApi.listCalendars(provider);
-      console.log(`[useCalendarSync] CALENDARS FOR ${provider} RECEIVED:`, data);
-      return data.map(cal => ({ ...cal, provider }));
+      console.log(`[useCalendarSync] DISCOVERING CALENDARS FOR ${provider}...`);
+      const data = await calendarSyncApi.discoverCalendars(provider);
+      return data;
     } catch (err: any) {
-      console.error(`[useCalendarSync] FAILED TO FETCH CALENDARS FOR ${provider}:`, err);
+      console.error(`[useCalendarSync] FAILED TO DISCOVER CALENDARS FOR ${provider}:`, err);
       return [];
     }
   }, []);
 
   /**
-   * Fetches events for a specific calendar ID under a provider.
+   * Fetches events for a specific calendar ID (numeric) using Smart Fetch.
    */
-  const loadEventsForCalendar = useCallback(async (provider: string, calendarId: string) => {
+  const loadEventsForCalendar = useCallback(async (cuSyncCalendarId: number, provider?: string) => {
     try {
-      console.log(`[useCalendarSync] FETCHING EVENTS FOR ${provider}/${calendarId}...`);
-      const data = await calendarSyncApi.getEvents(provider, calendarId);
-      console.log(`[useCalendarSync] EVENTS FOR ${provider}/${calendarId} RECEIVED:`, {
-        count: data.length,
-        events: data
-      });
-      return data.map(evt => ({ ...evt, provider, calendarId }));
+      console.log(`[useCalendarSync] SMART FETCHING EVENTS FOR ID: ${cuSyncCalendarId}...`);
+      const data = await calendarSyncApi.getSmartEvents(cuSyncCalendarId, provider);
+      return data;
     } catch (err: any) {
-      console.error(`[useCalendarSync] FAILED TO FETCH EVENTS FOR ${provider}/${calendarId}:`, err);
+      console.error(`[useCalendarSync] SMART FETCH FAILED FOR ID ${cuSyncCalendarId}:`, err);
       return [];
     }
   }, []);
@@ -93,66 +85,79 @@ export function useCalendarSync() {
   /**
    * Orchestrates a full refresh of all calendar-related data.
    */
-  const refreshAll = useCallback(async (targetCalendarId?: string) => {
-    console.log('[useCalendarSync] REFRESHING CALENDAR DATA...', targetCalendarId ? `(Target: ${targetCalendarId})` : '(Full)');
+  const refreshAll = useCallback(async (targetCuSyncCalendarId?: number) => {
+    console.log('[useCalendarSync] REFRESHING DATA...', targetCuSyncCalendarId ? `(Target ID: ${targetCuSyncCalendarId})` : '(All)');
     setLoading(true);
     
-    // Parallel load of vendors and connections
-    const [_, conns] = await Promise.all([loadVendors(), loadConnections()]);
-    
+    // 1. Identify providers
+    const conns = await loadConnections();
     const allProviders = Array.from(new Set(conns.filter(c => c.isConnected).map(c => c.vendorName)));
-    console.log('[useCalendarSync] IDENTIFIED CONNECTED PROVIDERS:', allProviders);
     
     if (allProviders.length === 0) {
-      console.log('[useCalendarSync] NO CONNECTED PROVIDERS FOUND.');
       setCalendars([]);
       setEvents([]);
       setLoading(false);
       return;
     }
 
-    // Load calendars for all connected providers
-    const calendarResults = await Promise.all(allProviders.map(p => loadCalendarsForProvider(p as string)));
+    // 2. Discover/Update calendar lists
+    const calendarResults = await Promise.all(allProviders.map(p => discoverCalendarsForProvider(p as string)));
     const flatCalendars = calendarResults.flat();
     setCalendars(flatCalendars);
 
-    // Dynamic Event Loading: If a target ID is provided, we only sync that. Otherwise, we sync primaries.
-    const eventResults = await Promise.all(allProviders.map(p => {
-      // If targetCalendarId is provided, we use it. Otherwise, default to 'primary'.
-      // Note: In a multi-provider setup, we might need more complex logic to map ID to provider.
-      return loadEventsForCalendar(p as string, targetCalendarId || 'primary');
-    }));
+    // Update syncedCalendarIds state based on DB status
+    setSyncedCalendarIds(flatCalendars.filter(c => c.isSyncOn).map(c => c.id));
+
+    // 3. Fetch events for active syncs
+    let eventResults: CalendarEvent[][] = [];
     
-    const flatEvents = eventResults.flat();
-    setEvents(flatEvents);
+    if (targetCuSyncCalendarId) {
+      // Fetch specifically for the requested calendar
+      const targetCal = flatCalendars.find(c => c.id === targetCuSyncCalendarId);
+      const evts = await loadEventsForCalendar(targetCuSyncCalendarId, targetCal?.provider);
+      eventResults = [evts];
+    } else {
+      // Fetch for ALL calendars that have sync toggled ON
+      const activeSyncCalendars = flatCalendars.filter(c => c.isSyncOn);
+      eventResults = await Promise.all(activeSyncCalendars.map(c => loadEventsForCalendar(c.id, c.provider)));
+    }
     
+    setEvents(eventResults.flat());
     setLoading(false);
-  }, [loadVendors, loadConnections, loadCalendarsForProvider, loadEventsForCalendar]);
+  }, [loadConnections, discoverCalendarsForProvider, loadEventsForCalendar]);
 
   /**
    * Toggles the sync state for a specific calendar.
-   * Now calls the backend endpoint to persist the toggle.
    */
-  const toggleSync = useCallback(async (calendarId: string) => {
+  const toggleSync = useCallback(async (cuSyncCalendarId: number) => {
     try {
-      console.log(`[useCalendarSync] PERSISTING SYNC TOGGLE FOR ${calendarId}`);
-      const result = await calendarSyncApi.toggleCalendarSync(calendarId);
+      console.log(`[useCalendarSync] TOGGLING SYNC FOR ID: ${cuSyncCalendarId}`);
       
-      setSyncedCalendarIds(prev => {
-        const isSynced = prev.includes(calendarId);
-        const next = isSynced ? prev.filter(id => id !== calendarId) : [...prev, calendarId];
-        return next;
-      });
+      // Determine next state
+      const isCurrentlySynced = syncedCalendarIds.includes(cuSyncCalendarId);
+      const nextSyncOn = !isCurrentlySynced;
+      
+      const result = await calendarSyncApi.toggleCalendarSync(cuSyncCalendarId, nextSyncOn);
+      
+      setSyncedCalendarIds(prev => 
+        nextSyncOn ? [...prev, cuSyncCalendarId] : prev.filter(id => id !== cuSyncCalendarId)
+      );
 
-      // If we just enabled sync, trigger a refresh to fetch the new events
-      if (result.enabled) {
-        await refreshAll(calendarId);
+      // Reflect in local calendar list
+      setCalendars(prev => prev.map(c => c.id === cuSyncCalendarId ? { ...c, isSyncOn: nextSyncOn } : c));
+
+      // If enabled, fetch events immediately
+      if (nextSyncOn) {
+        await refreshAll(cuSyncCalendarId);
+      } else {
+        // If disabled, remove those events from local state
+        setEvents(prev => prev.filter(e => e.calendarId !== cuSyncCalendarId));
       }
     } catch (err: any) {
-      console.error('[useCalendarSync] FAILED TO TOGGLE SYNC:', err);
+      console.error('[useCalendarSync] TOGGLE SYNC FAILED:', err);
       setError(err.message);
     }
-  }, [refreshAll]);
+  }, [syncedCalendarIds, refreshAll]);
 
   /**
    * Performs a full hydration sync across all providers.
@@ -160,14 +165,10 @@ export function useCalendarSync() {
   const fullSync = useCallback(async () => {
     try {
       setLoading(true);
-      console.log('[useCalendarSync] INITIATING FULL HYDRATION SYNC');
-      
+      console.log('[useCalendarSync] INITIATING FULL PROVIDER HYDRATION');
       const conns = await loadConnections();
       const allProviders = Array.from(new Set(conns.filter(c => c.isConnected).map(c => c.vendorName)));
-      
       await Promise.all(allProviders.map(p => calendarSyncApi.performFullHydration(p as string)));
-      
-      console.log('[useCalendarSync] FULL HYDRATION COMPLETE. REFRESHING LOCAL UI.');
       await refreshAll();
     } catch (err: any) {
       console.error('[useCalendarSync] FULL SYNC FAILED:', err);
@@ -184,7 +185,7 @@ export function useCalendarSync() {
     try {
       setLoading(true);
       await calendarSyncApi.setPrimaryCalendar(provider, calendarId);
-      await refreshAll(calendarId);
+      await refreshAll();
     } catch (err: any) {
       setError(err.message);
     } finally {

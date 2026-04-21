@@ -3,8 +3,8 @@ import { Check } from 'lucide-react';
 
 interface CalendarSelectorProps {
   calendars: any[];
-  selectedIds: string[];
-  onToggle: (id: string) => void;
+  selectedIds: (string | number)[];
+  onToggle: (id: string | number) => void;
 }
 
 /**
