@@ -16,8 +16,21 @@ export function useCalendarSync() {
   const [connections, setConnections] = useState<SyncConnection[]>([]);
   const [calendars, setCalendars] = useState<CalendarEntry[]>([]);
   const [events, setEvents] = useState<CalendarEvent[]>([]);
+  const [syncedCalendarIds, setSyncedCalendarIds] = useState<string[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  /**
+   * Toggles the sync state for a specific calendar.
+   */
+  const toggleSync = useCallback((calendarId: string) => {
+    setSyncedCalendarIds(prev => {
+      const isSynced = prev.includes(calendarId);
+      const next = isSynced ? prev.filter(id => id !== calendarId) : [...prev, calendarId];
+      console.log(`[useCalendarSync] TOGGLE SYNC FOR ${calendarId}: ${!isSynced ? 'ON' : 'OFF'}`);
+      return next;
+    });
+  }, []);
 
   /**
    * Fetches all available calendar vendors supported by the platform.
@@ -165,9 +178,11 @@ export function useCalendarSync() {
     connections,
     calendars,
     events,
+    syncedCalendarIds,
     loading,
     error,
     refreshAll,
+    toggleSync,
     loadEventsForCalendar,
     makePrimary,
     createOmVrtiCalendar,

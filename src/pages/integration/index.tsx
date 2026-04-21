@@ -21,9 +21,13 @@ export default function IntegrationHome() {
   const { 
     vendors, 
     connections, 
+    calendars,
+    syncedCalendarIds,
     loading, 
     error, 
-    refreshAll, 
+    refreshAll,
+    toggleSync,
+    makePrimary,
     api 
   } = useCalendarSync();
 
@@ -127,8 +131,12 @@ export default function IntegrationHome() {
                   <ConnectionItem 
                     key={conn.id} 
                     connection={conn} 
+                    calendars={calendars}
+                    syncedIds={syncedCalendarIds}
                     onDisconnect={handleDisconnect}
                     onViewCalendar={() => navigate(ROUTES.INTEGRATION.CALENDAR)}
+                    onToggleSync={toggleSync}
+                    onMakePrimary={makePrimary}
                   />
                 ))}
               </div>
