@@ -177,13 +177,13 @@ class CalendarSyncClient {
     return data.map(evt => ({ ...evt, provider, calendarId: cuSyncCalendarId }));
   }
 
-  // ============ Auth Endpoints ============
+  // ============ Auth Endpoints (Projected Alignment with /api/calendar) ============
 
   /**
    * Generates a provider-specific OAuth URL to initiate authentication.
    */
   async getAuthUrl(provider: string): Promise<string> {
-    const response = await this.request<{ url: string }>('GET', `/api/auth/${provider}/url`);
+    const response = await this.request<{ url: string }>('GET', `/api/calendar/auth/${provider}/url`);
     return response.url;
   }
 
@@ -193,7 +193,7 @@ class CalendarSyncClient {
   async checkAuthStatus(provider: string): Promise<boolean> {
     const response = await this.request<{ authenticated: boolean }>(
       'GET',
-      `/api/auth/${provider}/status`
+      `/api/calendar/auth/${provider}/status`
     );
     return response.authenticated;
   }
@@ -204,53 +204,53 @@ class CalendarSyncClient {
   async logout(provider: string): Promise<boolean> {
     const response = await this.request<{ success: boolean }>(
       'POST',
-      `/api/auth/${provider}/logout`
+      `/api/calendar/auth/${provider}/logout`
     );
     return response.success;
   }
 
-  // ============ Sync Endpoints ============
+  // ============ Sync Infrastructure (Projected Alignment with /api/calendar) ============
 
   /**
    * Fetches the list of all available calendar vendors (Google, Outlook, etc.)
    */
   async getVendors(): Promise<Vendor[]> {
-    return this.request<Vendor[]>('GET', '/api/sync/vendors');
+    return this.request<Vendor[]>('GET', '/api/calendar/sync/vendors');
   }
 
   /**
    * Fetches all active sync connections established by the user.
    */
   async getSyncConnections(): Promise<SyncConnection[]> {
-    return this.request<SyncConnection[]>('GET', '/api/sync/connections');
+    return this.request<SyncConnection[]>('GET', '/api/calendar/sync/connections');
   }
 
   /**
    * Fetches detailed information for a specific sync connection.
    */
   async getSyncConnection(id: number): Promise<SyncConnection> {
-    return this.request<SyncConnection>('GET', `/api/sync/connections/${id}`);
+    return this.request<SyncConnection>('GET', `/api/calendar/sync/connections/${id}`);
   }
 
   /**
    * Manually triggers a synchronization cycle for a specific connection.
    */
   async triggerSync(syncId: number, provider: string): Promise<string> {
-    return this.request<string>('POST', `/api/sync/sync/${syncId}?provider=${provider}`);
+    return this.request<string>('POST', `/api/calendar/sync/sync/${syncId}?provider=${provider}`);
   }
 
   /**
    * Polls the synchronization status of a specific connection.
    */
   async getSyncStatus(id: number): Promise<string> {
-    return this.request<string>('GET', `/api/sync/status/${id}`);
+    return this.request<string>('GET', `/api/calendar/sync/status/${id}`);
   }
 
   /**
    * Permenantly removes a sync connection.
    */
   async disconnectVendor(id: number): Promise<string> {
-    return this.request<string>('DELETE', `/api/sync/connections/${id}`);
+    return this.request<string>('DELETE', `/api/calendar/sync/connections/${id}`);
   }
 
   // ============ Calendar Endpoints ============

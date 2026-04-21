@@ -40,8 +40,9 @@ export default function IntegrationHome() {
     const handleAuthMessage = (event: MessageEvent) => {
       console.log('[IntegrationHome] RECEIVED CROSS-WINDOW MESSAGE:', event);
       if (event.data.type === 'OAUTH_AUTH_SUCCESS') {
-        console.log('[IntegrationHome] OAUTH SUCCESS. REFRESHING SYNC DATA...');
-        refreshAll();
+        console.log('[IntegrationHome] OAUTH SUCCESS. TRIGGERING PROVIDER DISCOVERY...');
+        // Force discovery (POST) instead of just local list (GET) after a fresh auth
+        refreshAll(undefined, true);
       }
     };
 

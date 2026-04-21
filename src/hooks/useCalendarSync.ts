@@ -55,7 +55,21 @@ export function useCalendarSync() {
   }, []);
 
   /**
-   * Fetches the official calendar list from the provider and updates DB.
+   * Fetches the calendar list directly from the local DB (GET).
+   */
+  const loadLocalCalendarsForProvider = useCallback(async (provider: string) => {
+    try {
+      console.log(`[useCalendarSync] FETCHING LOCAL CALENDARS FOR ${provider}...`);
+      const data = await calendarSyncApi.listLocalCalendars(provider);
+      return data;
+    } catch (err: any) {
+      console.error(`[useCalendarSync] FAILED TO FETCH LOCAL CALENDARS FOR ${provider}:`, err);
+      return [];
+    }
+  }, []);
+
+  /**
+   * Explicitly triggers a discovery request (POST) to fetch/upsert from provider.
    */
   const discoverCalendarsForProvider = useCallback(async (provider: string) => {
     try {
@@ -83,10 +97,11 @@ export function useCalendarSync() {
   }, []);
 
   /**
-   * Orchestrates a full refresh of all calendar-related data.
+   * Orchestrates a refresh of calendar data.
+   * By default, it lists from DB (GET). Use forceDiscovery to hit provider (POST).
    */
-  const refreshAll = useCallback(async (targetCuSyncCalendarId?: number) => {
-    console.log('[useCalendarSync] REFRESHING DATA...', targetCuSyncCalendarId ? `(Target ID: ${targetCuSyncCalendarId})` : '(All)');
+  const refreshAll = useCallback(async (targetCuSyncCalendarId?: number, forceDiscovery = false) => {
+    console.log('[useCalendarSync] REFRESHING DATA...', { targetCuSyncCalendarId, forceDiscovery });
     setLoading(true);
     
     // 1. Identify providers
@@ -100,8 +115,14 @@ export function useCalendarSync() {
       return;
     }
 
-    // 2. Discover/Update calendar lists
-    const calendarResults = await Promise.all(allProviders.map(p => discoverCalendarsForProvider(p as string)));
+    // 2. Load calendar lists (GET or POST)
+    const calendarResults = await Promise.all(
+      allProviders.map(p => 
+        forceDiscovery 
+          ? discoverCalendarsForProvider(p as string) 
+          : loadLocalCalendarsForProvider(p as string)
+      )
+    );
     const flatCalendars = calendarResults.flat();
     setCalendars(flatCalendars);
 
@@ -124,7 +145,7 @@ export function useCalendarSync() {
     
     setEvents(eventResults.flat());
     setLoading(false);
-  }, [loadConnections, discoverCalendarsForProvider, loadEventsForCalendar]);
+  }, [loadConnections, loadLocalCalendarsForProvider, discoverCalendarsForProvider, loadEventsForCalendar]);
 
   /**
    * Toggles the sync state for a specific calendar.
