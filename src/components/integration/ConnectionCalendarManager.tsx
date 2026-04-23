@@ -19,6 +19,8 @@ export const ConnectionCalendarManager: React.FC<ConnectionCalendarManagerProps>
   onToggleSync, 
   onMakePrimary 
 }) => {
+
+  console.log('Rendering ConnectionCalendarManager with calendars:', calendars);
   return (
     <div className="mt-4 flex flex-col gap-3">
       <div className="flex items-center gap-2 mb-1 px-1">
@@ -42,7 +44,7 @@ export const ConnectionCalendarManager: React.FC<ConnectionCalendarManagerProps>
                 <div className="flex flex-col min-w-0 pr-2">
                   <span className="text-xs font-black text-gray-900 truncate leading-tight uppercase tracking-tight">{cal.displayName}</span>
                   <div className="flex items-center gap-1.5 mt-0.5">
-                    <span className="text-[8px] font-bold text-gray-400 uppercase tracking-tighter truncate max-w-[120px]">ID: {cal.syncCalendarId}</span>
+                    <span className="text-[8px] font-bold text-gray-400 uppercase tracking-tighter truncate max-w-[120px]">ID: {cal.id}</span>
                   </div>
                 </div>
                 

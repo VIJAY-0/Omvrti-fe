@@ -32,6 +32,9 @@ export default function IntegrationHome() {
     api 
   } = useCalendarSync();
 
+
+  console.log("vendors", vendors);
+
   /**
    * OAuth Lifecycle Management
    * Listens for successful authentication messages from the provider popup.

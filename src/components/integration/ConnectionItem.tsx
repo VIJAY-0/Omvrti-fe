@@ -34,6 +34,8 @@ export const ConnectionItem: React.FC<ConnectionItemProps> = ({
     c.provider?.toLowerCase() === connection.vendorName.toLowerCase()
   );
 
+  console.log(calendars)
+
   const getIcon = (name: string) => {
     const lowerName = name.toLowerCase();
     if (lowerName === 'google') return <Calendar className="text-orange-500" size={20} />;

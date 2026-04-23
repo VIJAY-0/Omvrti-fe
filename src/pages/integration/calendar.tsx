@@ -286,7 +286,7 @@ export default function CalendarView() {
       <motion.button
         whileHover={{ scale: 1.1 }}
         whileTap={{ scale: 0.9 }}
-        onClick={refreshAll}
+         onClick={() => refreshAll()}
         className="fixed bottom-24 right-8 w-14 h-14 bg-primary text-white rounded-full shadow-2xl flex items-center justify-center z-40 border border-white/20 active:bg-orange-600"
       >
         <RefreshCw size={24} className={loading ? 'animate-spin' : ''} />

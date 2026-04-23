@@ -24,6 +24,13 @@ export function useCalendarSync() {
    * Fetches all available calendar vendors supported by the platform.
    */
   const loadVendors = useCallback(async () => {
+    console.log('[useCalendarSync] FETCHING VENDORS...'); 
+    console.log('[useCalendarSync] FETCHING VENDORS...'); 
+    console.log('[useCalendarSync] FETCHING VENDORS...'); 
+    console.log('[useCalendarSync] FETCHING VENDORS...'); 
+    console.log('[useCalendarSync] FETCHING VENDORS...'); 
+    console.log('[useCalendarSync] FETCHING VENDORS...'); 
+    console.log('[useCalendarSync] FETCHING VENDORS...'); 
     try {
       console.log('[useCalendarSync] FETCHING VENDORS...');
       const data = await calendarSyncApi.getVendors();
@@ -105,6 +112,7 @@ export function useCalendarSync() {
     setLoading(true);
     
     // 1. Identify providers
+    const vv = await loadVendors();   // 👈 ADD THIS
     const conns = await loadConnections();
     const allProviders = Array.from(new Set(conns.filter(c => c.isConnected).map(c => c.vendorName)));
     
